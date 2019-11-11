@@ -42,7 +42,7 @@ def seperate_data(x,y):
         if sort_y[a] != sort_y[a+1]:
             dataset_x.append(np.array(sort_x[mark:a]))
             dataset_y.append(np.array(sort_y[mark:a]))
-            mark = a
+            mark = a + 1 # here the mark should be updated to the next index.
         if a == len(sort_y)-2:
             dataset_x.append(np.array(sort_x[mark:len(sort_y)]))
             dataset_y.append(np.array(sort_y[mark:len(sort_y)]))

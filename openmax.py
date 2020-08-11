@@ -23,6 +23,7 @@ import scipy
 import pickle
 import matplotlib.pyplot as plt
 
+from PIL import Image
 #from nepali_characters import *
 
 #train_x,train_y,test_x,text_y,valid_x,valid_y = split(0.9,0.05,0.05)
@@ -65,7 +66,7 @@ def compute_distances(mean_feature,feature,category_name):
         eucos_dist += [spd.euclidean(mean_feature, feat)/200. + spd.cosine(mean_feature, feat)]
     distances = {'eucos':eucos_dist,'cosine':cos_dist,'euclidean':eu_dist}
     return distances
-                       
+
 batch_size = 128
 num_classes = 10
 epochs = 50
@@ -94,7 +95,7 @@ if K.image_data_format() == 'channels_first':
 else:
     x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
     x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
-    #x_valid = x_valid.reshape(x_valid.shape[0],img_rows, img_cols, 1)    
+    #x_valid = x_valid.reshape(x_valid.shape[0],img_rows, img_cols, 1)
     input_shape = (img_rows, img_cols, 1)
 
 
@@ -129,12 +130,12 @@ def get_correct_classified(pred,y):
 def create_model(model):
 
     output = model.layers[-1]
-    
+
     # Combining the train and test set
-    #print (x_train.shape,x_test.shape) 
+    #print (x_train.shape,x_test.shape)
     #exit()
     x_all = np.concatenate((x_train,x_test),axis=0)
-    y_all = np.concatenate((y_train,y_test),axis=0)    
+    y_all = np.concatenate((y_train,y_test),axis=0)
     pred = model.predict(x_all)
     index = get_correct_classified(pred,y_all)
     x1_test = x_all[index]
@@ -163,56 +164,56 @@ def create_model(model):
     np.save('distance',feature_distance)
 
 def build_weibull(mean,distance,tail):
-    weibull_model = {}    
+    weibull_model = {}
     for i in range(len(mean)):
-        weibull_model[label[i]] = {}        
+        weibull_model[label[i]] = {}
         weibull = weibull_tailfitting(mean[i], distance[i], tailsize = tail)
         weibull_model[label[i]] = weibull
     return weibull_model
-        
+
 def compute_openmax(model,imagearr):
-    mean = np.load('mean.npy')
-    distance = np.load('distance.npy')
+    mean = np.load('mean.npy', allow_pickle=True)
+    distance = np.load('distance.npy', allow_pickle=True)
     #Use loop to find the good parameters
     #alpharank_list = [1,2,3,4,5,5,6,7,8,9,10]
     #tail_list = list(range(0,21))
 
     alpharank_list = [10]
     #tail_list = [4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
-    tail_list = [5]    
+    tail_list = [5]
     total = 0
     for alpha in alpharank_list:
         weibull_model = {}
         openmax = None
-        softmax = None        
+        softmax = None
         for tail in tail_list:
             #print ('Alpha ',alpha,' Tail ',tail)
             #print ('++++++++++++++++++++++++++++')
-            weibull_model = build_weibull(mean, distance, tail) 
+            weibull_model = build_weibull(mean, distance, tail)
             openmax , softmax = recalibrate_scores(weibull_model, label, imagearr, alpharank=alpha)
-    
+
             #print ('Openmax: ',np.argmax(openmax))
-            #print ('Softmax: ',np.argmax(softmax))            
+            #print ('Softmax: ',np.argmax(softmax))
             #print ('opemax lenght',openmax.shape)
             #print ('openmax',np.argmax(openmax))
             #print ('openmax',openmax)
             #print ('softmax',softmax.shape)
             #print ('softmax',np.argmax(softmax))
             #if np.argmax(openmax) == np.argmax(softmax):
-            #if np.argmax(openmax) == 0 and np.argmax(softmax) == 0:            
+            #if np.argmax(openmax) == 0 and np.argmax(softmax) == 0:
                 #print ('########## Parameters found ############')
-                #print ('Alpha ',alpha,' Tail ',tail)                
-                #print ('########## Parameters found ############')                
+                #print ('Alpha ',alpha,' Tail ',tail)
+                #print ('########## Parameters found ############')
             #    total += 1
             #print ('----------------------------')
     return np.argmax(softmax),np.argmax(openmax)
-    
+
 def process_input(model,ind):
     imagearr = {}
-    plt.imshow(np.squeeze(x_train[ind]))    
-    plt.show()    
+    plt.imshow(np.squeeze(x_train[ind]))
+    plt.show()
     image = np.reshape(x_train[ind],(1,28,28,1))
-    score5,fc85 = compute_feature(image, model)    
+    score5,fc85 = compute_feature(image, model)
     imagearr['scores'] = score5
     imagearr['fc8'] = fc85
     #print (score5)
@@ -229,9 +230,14 @@ def compute_activation(model,img):
     return imagearr
 
 def image_show(img,label):
-    img = scipy.misc.imresize(np.squeeze(img),(28,28))
-    img = img[:,0:28*28]    
-    plt.imshow(img,cmap='gray')
+    print(img.shape)
+    # img = scipy.misc.imresize(np.squeeze(img), (28, 28))
+    # img = np.array(
+    #     Image.fromarray(
+    #         (np.squeeze(img)).astype(np.uint8)).resize((28, 28)))
+    # print(img.shape)
+    # img = img[:, 0:28*28]
+    plt.imshow(np.squeeze(img), cmap='gray')
     #print ('Character Label: ',np.argmax(label))
     plt.show()
 
@@ -263,7 +269,7 @@ def openmax_known_class(model,y):
 
 def main():
     #model = load_model("MNIST_CNN_tanh.h5")
-    model = load_model("MNIST_CNN.h5")    
+    model = load_model("MNIST_CNN.h5")
     #create_model(model)
     #openmax_known_class(model,y_test)
     openmax_unknown_class(model)

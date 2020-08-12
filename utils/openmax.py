@@ -163,8 +163,8 @@ def create_model(model, data):
         distance = compute_distances(mean, fc8, sep_y)
         feature_mean.append(mean)
         feature_distance.append(distance)
-    np.save('mean', feature_mean)
-    np.save('distance', feature_distance)
+    np.save('data/mean', feature_mean)
+    np.save('data/distance', feature_distance)
 
 
 def build_weibull(mean, distance, tail):
@@ -177,8 +177,8 @@ def build_weibull(mean, distance, tail):
 
 
 def compute_openmax(model, imagearr):
-    mean = np.load('mean.npy', allow_pickle=True)
-    distance = np.load('distance.npy', allow_pickle=True)
+    mean = np.load('data/mean.npy', allow_pickle=True)
+    distance = np.load('data/distance.npy', allow_pickle=True)
     # Use loop to find the good parameters
     # alpharank_list = [1,2,3,4,5,5,6,7,8,9,10]
     # tail_list = list(range(0,21))
@@ -243,7 +243,7 @@ def compute_activation(model, img):
     return imagearr
 
 
-def image_show(img, label):
+def image_show(img, labels):
     # print(img.shape)
     # img = scipy.misc.imresize(np.squeeze(img), (28, 28))
     # img = np.array(
@@ -253,6 +253,10 @@ def image_show(img, label):
     # img = img[:, 0:28*28]
     plt.imshow(np.squeeze(img), cmap='gray')
     # print ('Character Label: ',np.argmax(label))
+    title = "Original: " + str(
+        labels[0]) + " Softmax: " + str(
+            labels[1]) + " Openmax: " + str(labels[0])
+    plt.title(title, fontsize=8)
     plt.show()
 
 

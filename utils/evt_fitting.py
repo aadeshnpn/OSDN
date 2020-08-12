@@ -10,7 +10,7 @@ import numpy as np
 
 
 try:
-    import libmr
+    from utils import libmr      # noqa: F401
 except ImportError:
     print("LibMR not installed or libmr.so not found")
     print("Install libmr: cd libMR/; ./compile.sh")

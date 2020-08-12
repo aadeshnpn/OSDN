@@ -7,7 +7,7 @@ import numpy as np
 # from PIL import Image
 
 
-def read_data(filename='nepali_numbers_6.mat'):
+def read_data(filename='data/nepali_numbers_6.mat'):
     # filename = 'nepaliChars_dataset_v7.3.mat'
     dataset = sio.loadmat(filename)
     labels = dataset['Y']

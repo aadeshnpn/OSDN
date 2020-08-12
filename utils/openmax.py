@@ -1,29 +1,16 @@
 import keras
 from keras.datasets import mnist
-# from keras.models import (
-#     Sequential, load_model, save_model,
-#     model_from_config, model_from_json)
-# from keras.layers import Dense, Dropout, Flatten
-# from keras.layers import Conv2D, MaxPooling2D
 from keras import backend as K
-# from keras.utils import plot_model
 
-from evt_fitting import weibull_tailfitting
-from compute_openmax import recalibrate_scores
-# from openmax_utils import compute_distance
+from utils.evt_fitting import weibull_tailfitting
+from utils.compute_openmax import recalibrate_scores
 
 import scipy.spatial.distance as spd
-# import h5py
-
-# import libmr
 
 import numpy as np
-# import scipy
-
-# import pickle
 import matplotlib.pyplot as plt
 
-# from PIL import Image
+from PIL import Image
 # from nepali_characters import *
 
 # train_x,train_y,test_x,text_y,valid_x,valid_y = split(0.9,0.05,0.05)
@@ -73,52 +60,57 @@ def compute_distances(mean_feature, feature, category_name):
     return distances
 
 
-batch_size = 128
-num_classes = 10
-epochs = 50
+def get_train_test():
+    # batch_size = 128
+    num_classes = 10
+    # epochs = 50
 
-# input image dimensions
-img_rows, img_cols = 28, 28
+    # input image dimensions
+    img_rows, img_cols = 28, 28
 
-# the data, shuffled and split between train and test sets
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
-# print (x_train.shape,y_train.shape)
+    # the data, shuffled and split between train and test sets
+    (x_train, y_train), (x_test, y_test) = mnist.load_data()
+    # print (x_train.shape,y_train.shape)
 
-# sep_x,sep_y = seperate_data(x_test,y_test)
+    # sep_x,sep_y = seperate_data(x_test,y_test)
 
-# emnist = emnist.read_data_sets('EMNIST_data',one_hot=True)
-# x_train, y_train = emnist.train.images,emnist.train.labels
-# x_test, y_test = emnist.test.images,emnist.test.labels
-# x_valid, y_valid = emnist.validation.images,emnist.validation.labels
+    # emnist = emnist.read_data_sets('EMNIST_data',one_hot=True)
+    # x_train, y_train = emnist.train.images,emnist.train.labels
+    # x_test, y_test = emnist.test.images,emnist.test.labels
+    # x_valid, y_valid = emnist.validation.images,emnist.validation.labels
 
-# print (x_train.shape,y_train.shape)
+    # print (x_train.shape,y_train.shape)
 
-if K.image_data_format() == 'channels_first':
-    x_train = x_train.reshape(x_train.shape[0], 1, img_rows, img_cols)
-    x_test = x_test.reshape(x_test.shape[0], 1, img_rows, img_cols)
-    # x_valid = x_valid.reshape(x_valid.shape[0], 1, img_rows, img_cols)
-    input_shape = (1, img_rows, img_cols)
-else:
-    x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
-    x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
-    # x_valid = x_valid.reshape(x_valid.shape[0],img_rows, img_cols, 1)
-    input_shape = (img_rows, img_cols, 1)
+    if K.image_data_format() == 'channels_first':
+        x_train = x_train.reshape(x_train.shape[0], 1, img_rows, img_cols)
+        x_test = x_test.reshape(x_test.shape[0], 1, img_rows, img_cols)
+        # x_valid = x_valid.reshape(x_valid.shape[0], 1, img_rows, img_cols)
+        input_shape = (1, img_rows, img_cols)
+    else:
+        x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
+        x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
+        # x_valid = x_valid.reshape(x_valid.shape[0],img_rows, img_cols, 1)
+        input_shape = (img_rows, img_cols, 1)   # noqa: F841
+
+    x_train = x_train.astype('float32')
+    x_test = x_test.astype('float32')
+    # x_valid = x_valid.astype('float32')
+    x_train /= 255
+    x_test /= 255
+    # x_valid /= 255
+    # print('x_train shape:', x_train.shape)
+    # print(x_train.shape[0], 'train samples')
+    # print(x_test.shape[0], 'test samples')
+    # print(x_valid.shape[0], 'valid samples')
+
+    # convert class vectors to binary class matrices
+    y_train = keras.utils.to_categorical(y_train, num_classes)
+    y_test = keras.utils.to_categorical(y_test, num_classes)
+
+    return x_train, x_test, y_train, y_test
 
 
-x_train = x_train.astype('float32')
-x_test = x_test.astype('float32')
-# x_valid = x_valid.astype('float32')
-x_train /= 255
-x_test /= 255
-# x_valid /= 255
-# print('x_train shape:', x_train.shape)
-# print(x_train.shape[0], 'train samples')
-# print(x_test.shape[0], 'test samples')
-# print(x_valid.shape[0], 'valid samples')
-
-# convert class vectors to binary class matrices
-y_train = keras.utils.to_categorical(y_train, num_classes)
-y_test = keras.utils.to_categorical(y_test, num_classes)
+# x_train, x_test, y_train, y_test = get_train_test()
 
 
 def get_activations(model, layer, X_batch):
@@ -137,12 +129,14 @@ def get_correct_classified(pred, y):
     return res
 
 
-def create_model(model):
+def create_model(model, data):
     # output = model.layers[-1]
 
     # Combining the train and test set
     # print (x_train.shape,x_test.shape)
     # exit()
+    # x_train, x_test, y_train, y_test = get_train_test()
+    x_train, x_test, y_train, y_test = data
     x_all = np.concatenate((x_train, x_test), axis=0)
     y_all = np.concatenate((y_train, y_test), axis=0)
     pred = model.predict(x_all)
@@ -221,7 +215,8 @@ def compute_openmax(model, imagearr):
     return np.argmax(softmax), np.argmax(openmax)
 
 
-def process_input(model, ind):
+def process_input(model, ind, data):
+    x_train, x_test, y_train, y_test = data
     imagearr = {}
     plt.imshow(np.squeeze(x_train[ind]))
     plt.show()
@@ -235,7 +230,10 @@ def process_input(model, ind):
 
 def compute_activation(model, img):
     imagearr = {}
-    img = np.squeeze(img)
+    # img = np.squeeze(img)
+    img = np.array(
+        Image.fromarray(
+            (np.squeeze(img)).astype(np.uint8)).resize((28, 28)))
     # img = scipy.misc.imresize(np.squeeze(img),(28,28))
     # img = img[:,0:28*28]
     img = np.reshape(img, (1, 28, 28, 1))
@@ -246,7 +244,7 @@ def compute_activation(model, img):
 
 
 def image_show(img, label):
-    print(img.shape)
+    # print(img.shape)
     # img = scipy.misc.imresize(np.squeeze(img), (28, 28))
     # img = np.array(
     #     Image.fromarray(
@@ -272,7 +270,8 @@ def image_show(img, label):
     # print ('correctly classified',total,'total set',len(y2))
 
 
-def openmax_known_class(model, y):
+def openmax_known_class(model, y, data):
+    x_train, x_test, y_train, y_test = data
     # total = 0
     for i in range(15):
         # print ('label', y[i])

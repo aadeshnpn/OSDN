@@ -1,8 +1,4 @@
-# import os, sys, pickle, glob
-# import os.path as path
-# import argparse
 import scipy.spatial.distance as spd
-# import scipy as sp
 import numpy as np
 
 

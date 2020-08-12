@@ -16,7 +16,7 @@ def main():
     # Step 2: Load the trained model
     model = load_model('data/MNIST_CNN.h5')
 
-    # Step 3: Load the test data you want to test
+    # Step 3: Load the training data you trained the DNN model
     data = get_train_test()
     x_train, x_test, y_train, y_test = data
 
